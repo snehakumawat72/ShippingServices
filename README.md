@@ -1,38 +1,28 @@
-# ShippingServices
+# DropZone - Secure File Drop Service
 
-A secure CLI-based ephemeral file sharing system designed for internal teams. Built with Node.js, gRPC, RabbitMQ, and MinIO, it ensures privacy, auditability, and ease of deployment.
+DropZone is a secure CLI-based ephemeral file sharing system designed for internal teams. Built with Node.js, gRPC, RabbitMQ, and MinIO, it ensures privacy, auditability, and ease of deployment.
+Note: Currently this project is just in its initial phase. Play around but don't upload anything sesnsitive until further notice.
 
-> **⚠️ Note:** Currently this project is just in its initial phase. Play around but don't upload anything sensitive until further notice.
+---
 
 ## 🌐 Features
 
-- ⚡ **Secure file upload/download** with passcode-protected HMAC tokens
-- 🪝 **Event-based audit logging** with RabbitMQ and MongoDB
-- ☁️ **Internal-only object storage** via S3-compatible MinIO
-- 🧾 **Auto-expiry, rate-limiting, and CLI token-based access**
-- 📈 **Deployable via Docker Compose or Kubernetes** with ArgoCD (Yet to be added. Stay tuned!!!)
+- ⚡ Secure file upload/download with passcode-protected HMAC tokens
+- 🪝 Event-based audit logging with RabbitMQ and MongoDB
+- ☁️ Internal-only object storage via S3-compatible MinIO
+- 🧾 Auto-expiry, rate-limiting, and CLI token-based access
+- 📈 Deployable via Docker Compose or Kubernetes with ArgoCD (Yet to be added. Stay tuned!!!)
+
+---
 
 ## 🚀 Quickstart
 
 ### Prerequisites
 
-- Node.js (v18+ recommended)
-- Docker & Docker Compose
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [Docker & Docker Compose](https://docs.docker.com/compose/install/)
 
-### Infrastructure Setup
-
-1. **Start the services:**
-   ```bash
-   cd infra/
-   docker-compose up -d
-   ```
-
-2. **Verify services are running:**
-   ```bash
-   docker-compose ps
-   ```
-
-### Client Installation and Usage
+### Client installation and usage
 
 #### 🛠 Build CLI
 
@@ -55,7 +45,7 @@ dropzone upload ./secrets.txt
 dropzone download <TOKEN>
 ```
 
-## 📁 Project Structure
+### 📁 Project Structure
 
 ```
 dropzone/
@@ -69,128 +59,75 @@ dropzone/
 └── README.md
 ```
 
-## 🏗️ Architecture
+### Self-hosting:
 
-ShippingServices follows a microservices architecture with the following components:
-
-### Core Services
-
-- **File Service**: Handles file upload/download operations via gRPC
-- **Audit Service**: Consumes events from RabbitMQ and logs to MongoDB
-- **MinIO**: S3-compatible object storage for file persistence
-- **RabbitMQ**: Message broker for event-driven architecture
-- **MongoDB**: Database for audit logs and metadata
-
-### Security Features
-
-- **HMAC Token Authentication**: Each file access is protected by cryptographically signed tokens
-- **Passcode Protection**: Additional layer of security for sensitive files
-- **Rate Limiting**: Prevents abuse and ensures fair usage
-- **Auto-expiry**: Files automatically expire after a configurable time period
-
-## 🔧 Development
-
-### Running Services Locally
-
-1. **Start infrastructure:**
-   ```bash
-   cd infra/
-   docker-compose up -d
-   ```
-
-2. **Start file service:**
-   ```bash
-   cd services/file-service/
-   npm install
-   npm run dev
-   ```
-
-3. **Start audit service:**
-   ```bash
-   cd services/audit-service/
-   npm install
-   npm run dev
-   ```
-
-### Building the CLI
+Note: Modify client to call your deployed file-service
 
 ```bash
-cd client/
-npm install
-npm run build
-npm link
+cd infra/
+docker-compose up -d
 ```
 
-### Environment Variables
+- MinIO Console: [http://localhost:9001](http://localhost:9001)
+- RabbitMQ UI: [http://localhost:15672](http://localhost:15672) (`guest` / `guest`)
+- MongoDB: localhost:27017
 
-Create a `.env` file in the root directory:
+> ✅ Creates a MinIO bucket: `dropzone` (must be created manually or on first run)
+
+#### 🔧 Environment Variables
+
+Set up a `.env` file in `file-service/`:
 
 ```env
-# MinIO Configuration
-MINIO_ROOT_USER=admin
-MINIO_ROOT_PASSWORD=password123
-MINIO_ENDPOINT=localhost:9000
-
-# RabbitMQ Configuration
-RABBITMQ_URL=amqp://guest:guest@localhost:5672
-
-# MongoDB Configuration
-MONGODB_URI=mongodb://localhost:27017/shippingservices
-
-# Security
-JWT_SECRET=your-secret-key
-HMAC_SECRET=your-hmac-secret
+MINIO_ACCESS_KEY=minio
+MINIO_SECRET_KEY=minio123
+S3_BUCKET=dropzone
+S3_ENDPOINT=http://localhost:9000
 ```
 
-## 🔒 Security Considerations
+Do the same for `audit-service/` (for MongoDB URL, if needed).
+You can check out your variables in docker-compose.yml.
 
-- Files are stored with encrypted names in MinIO
-- All access is logged and auditable
-- Tokens have configurable expiration times
-- Rate limiting prevents abuse
-- Internal network isolation recommended for production
+#### File Service
 
-## 📊 Monitoring & Logging
+```bash
+cd services/file-service
+npx ts-node src/index.ts
+```
 
-- All file operations are logged to MongoDB via the audit service
-- RabbitMQ provides reliable event delivery
-- Docker Compose includes health checks for all services
+#### Audit Service
 
-## 🚧 Roadmap
+```bash
+cd services/audit-service
+npx ts-node src/index.ts
+```
 
-- [ ] Kubernetes deployment with ArgoCD
-- [ ] Web UI for file management
-- [ ] Advanced access controls and permissions
-- [ ] File encryption at rest
-- [ ] Metrics and monitoring dashboard
-- [ ] API documentation with OpenAPI/Swagger
+#### Mongo Inspection
 
-## 🤝 Contributing
+You can inspect logs:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-For issues and questions:
-- Create an issue in the GitHub repository
-- Check the troubleshooting section in the documentation
-- Contact the development team
-
-## 🔗 Related Projects
-
-- [MinIO](https://min.io/) - High-performance object storage
-- [RabbitMQ](https://www.rabbitmq.com/) - Message broker
-- [gRPC](https://grpc.io/) - High-performance RPC framework
-- [MongoDB](https://www.mongodb.com/) - Document database
+```bash
+docker exec -it <mongo-container> mongosh
+use dropzone
+show collections
+```
 
 ---
 
-**Happy file sharing! 🚀**
+## 🔒 Security Notes
+
+- Token is HMAC signed using passcode (but can be brute-forced — future: use signed URLs)
+- MinIO is internal-only — not exposed to internet
+- Rate-limiting and expiry implemented in memory (can be enhanced via Redis)
+
+---
+
+## 🤝 Contributing / Feedback
+
+Pull requests welcome! Raise issues for bugs or enhancements.
+
+---
+
+## 📜 License
+
+MIT License
